@@ -3,11 +3,13 @@ name = "ai-chatbot-flask-reatc"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 dependencies = [
-    "flask>=3.1.3",
+    "fastapi>=0.139.0",
+    "jsonpatch>=1.33",
     "langchain>=1.3.11",
     "langchain-community>=0.4.2",
     "langchain-openrouter>=0.2.4",
     "python-dotenv>=1.2.2",
+    "uvicorn>=0.49.0",
 ]

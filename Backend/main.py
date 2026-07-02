@@ -2,13 +2,28 @@ from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableWithMessageHistory, RunnableConfig
 from langchain_openrouter import ChatOpenRouter
-
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+import uvicorn
 import dotenv
 import os
 
 dotenv.load_dotenv()
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 MODEL = os.getenv("MODEL")
+
+
+app = FastAPI(title='ChatBot')
+
+@app.get('/')
+async def  hello():
+    return {
+        "message": "Hello World"
+    }
+
+class MensajeUser(BaseModel):
+    session_id : str
+    mensaje_user: str
 
 chat = ChatOpenRouter(
     model=MODEL,
@@ -28,12 +43,6 @@ template = ChatPromptTemplate.from_messages([
     ("human","{question}")
 ])
 
-configurables : RunnableConfig= {
-    "configurable":{
-        "session_id": "1234"
-    }
-}
-
 
 session = {}
 def get_chat_history(session_id: str) -> ChatMessageHistory:
@@ -41,21 +50,30 @@ def get_chat_history(session_id: str) -> ChatMessageHistory:
         session[session_id] = ChatMessageHistory()
     return session[session_id]
 
+chain = template | chat
+
 runnable_chat_history = RunnableWithMessageHistory(
-    chat,
-    get_chat_history
+    chain,
+    get_chat_history,
+    input_messages_key="question"
 )
 
-def chat_active():
-    while True:
-        user_input = input("\nmensaje del usuario: ")
+@app.post('/chat')
+async def chat_ai(mensajeChat : MensajeUser):
+    user_input=mensajeChat.mensaje_user
+    id = mensajeChat.session_id
 
-        if user_input.lower() in ["bye","adios","exit"]:
-            print("hasta pronto")
-            return 
-        response = runnable_chat_history.invoke(user_input, config=configurables)
-        print(" respuesta del LLM: ")
-        for chunk in chat.stream(template.invoke({"question":response})):
-            print(chunk.content,end="", flush=True)
+    configurables : RunnableConfig= {
+    "configurable":{
+        "session_id": id
+      }
+    }
 
-chat_active()
+    if not user_input.strip():
+        raise HTTPException(status_code=400, detail="El mensaje no puede estar vacío")
+    
+    response = runnable_chat_history.invoke({"question": user_input}, config=configurables)
+    return {"respuesta IA":response.content}
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="127.0.0.1", port=5000, reload=True)
