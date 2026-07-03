@@ -3,6 +3,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableWithMessageHistory, RunnableConfig
 from langchain_openrouter import ChatOpenRouter
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 import dotenv
@@ -14,6 +15,16 @@ MODEL = os.getenv("MODEL")
 
 
 app = FastAPI(title='ChatBot')
+
+# 2. Configura e introduce las opciones de CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Permite peticiones desde cualquier origen (como tu React)
+    allow_credentials=True,
+    allow_methods=["*"],  # Permite todos los métodos (POST, OPTIONS, etc.)
+    allow_headers=["*"],  # Permite todas las cabeceras
+)
+
 
 @app.get('/')
 async def  hello():
