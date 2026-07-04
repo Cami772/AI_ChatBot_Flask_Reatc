@@ -5,6 +5,7 @@ from langchain_openrouter import ChatOpenRouter
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from user import User
 import uvicorn
 import dotenv
 import os
@@ -85,6 +86,13 @@ async def chat_ai(mensajeChat : MensajeUser):
     
     response = runnable_chat_history.invoke({"question": user_input}, config=configurables)
     return {"respuesta IA":response.content}
+
+@app.post('/user')
+def userData(userData: User):
+    print(userData)
+    return {"mensaje": userData}
+
+        
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="127.0.0.1", port=5000, reload=True)
